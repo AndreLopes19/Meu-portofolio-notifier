@@ -1,0 +1,28 @@
+name: ETF Discord Notifier
+
+on:
+  schedule:
+    # Corre às 17:30 UTC (2ª a 6ª feira) - Aprox. após o fecho dos mercados
+    - cron: '30 17 * * 1-5'
+  workflow_dispatch: # Cria um botão para poderes testar manualmente a qualquer momento
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar o Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar bibliotecas necessárias
+        run: pip install yfinance requests
+
+      - name: Executar o script Python
+        run: python main.py
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
