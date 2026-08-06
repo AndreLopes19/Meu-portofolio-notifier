@@ -2,9 +2,8 @@ name: ETF Discord Notifier
 
 on:
   schedule:
-    # Corre às 17:30 UTC (2ª a 6ª feira) - Aprox. após o fecho dos mercados
     - cron: '30 17 * * 1-5'
-  workflow_dispatch: # Cria um botão para poderes testar manualmente a qualquer momento
+  workflow_dispatch:
 
 jobs:
   run-script:
@@ -28,4 +27,3 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
 
-          
