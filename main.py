@@ -20,6 +20,7 @@ ativos = [
 
 linhas_geral = []
 linhas_destaque = []
+houve_grande_movimento = False
 
 for item in ativos:
     try:
@@ -31,43 +32,50 @@ for item in ativos:
             var_pct = ((preco_atual - preco_anterior) / preco_anterior) * 100
             sinal = "📈" if var_pct >= 0 else "📉"
 
-            linha = f"{sinal} **{item['nome']}** (`{item['ticker']}`): {preco_atual:.2f} {item['moeda']} ({var_pct:+.2f}%)"
+            linha = f"{sinal} {item['nome']}: {preco_atual:.2f} {item['moeda']} ({var_pct:+.2f}%)"
             linhas_geral.append(linha)
 
-            # Se a variação for de +3% ou mais, ou -3% ou menos (grande oscilação)
+            # Se variar >= 3%
             if abs(var_pct) >= 3.0:
-                icone_alerta = "🔥 OPORTUNIDADE/SUBIDA" if var_pct > 0 else "💥 QUEDA BRUSCA"
+                houve_grande_movimento = True
+                icone_alerta = "🔥 OPORTUNIDADE" if var_pct > 0 else "💥 QUEDA"
                 linhas_destaque.append(
-                    f"• {icone_alerta}: **{item['nome']}** variou **{var_pct:+.2f}%** ({preco_atual:.2f} {item['moeda']})"
+                    f"• {icone_alerta}: {item['nome']} ({var_pct:+.2f}%)"
                 )
-
         else:
-            linhas_geral.append(f"⚠️ **{item['nome']}**: Sem dados recentes")
+            linhas_geral.append(f"⚠️ {item['nome']}: Sem dados")
     except Exception:
-        linhas_geral.append(f"❌ **{item['nome']}**: Erro a carregar")
+        linhas_geral.append(f"❌ {item['nome']}: Erro")
 
-# Montar a mensagem final
-mensagem = ["📊 **Resumo Diário do Portefólio**\n"]
+# Montar o texto da notificação
+mensagem = []
 
-# Se houver algum ativo com variação >= 3%, cria a secção especial no topo
 if linhas_destaque:
-    mensagem.append("🚨 **GRANDES MOVIMENTOS (≥ 3%)** 🚨")
+    mensagem.append("🚨 GRANDES MOVIMENTOS (≥ 3%) 🚨")
     mensagem.extend(linhas_destaque)
-    mensagem.append("\n" + "─"*30 + "\n")
+    mensagem.append("\n" + "─"*25 + "\n")
 
 mensagem.extend(linhas_geral)
 texto_final = "\n".join(mensagem)
 
-# Enviar para o Discord
+# --- ENVIAR NOTIFICAÇÃO PUSH (NTFY.SH) ---
+topico_ntfy = os.getenv("NTFY_TOPIC") # Usa o teu nome único do Passo 1
+
+if topico_ntfy:
+    # Se houver grande movimento (>=3%), a notificação faz mais barulho/prioridade alta!
+    prioridade = "high" if houve_grande_movimento else "default"
+    
+    requests.post(
+        f"https://ntfy.sh/{topico_ntfy}",
+        data=texto_final.encode("utf-8"),
+        headers={
+            "Title": "📊 Mercado & Portefólio",
+            "Priority": prioridade,
+            "Tags": "chart_with_upwards_trend,moneybag"
+        }
+    )
+
+# --- OPÇÃO: Manter também o Discord (Opcional) ---
 webhook_url = os.getenv("DISCORD_WEBHOOK")
-
 if webhook_url:
-    payload = {"content": texto_final}
-    response = requests.post(webhook_url, json=payload)
-    print("Enviado com sucesso!" if response.status_code == 204 else f"Erro: {response.status_code}")
-else:
-    print("DISCORD_WEBHOOK não configurado.")
-
-
-
-
+    requests.post(webhook_url, json={"content": texto_final})
