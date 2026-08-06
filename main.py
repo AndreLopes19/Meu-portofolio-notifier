@@ -9,16 +9,17 @@ import requests
 import yfinance as yf
 
 ativos = [
-    {"ticker": "VOW3.DE", "nome": "Volkswagen", "moeda": "€"},        # Corrigido: VOW3.DE
+    {"ticker": "VOW3.DE", "nome": "Volkswagen", "moeda": "€"},
     {"ticker": "TTWO", "nome": "Take-Two Interactive", "moeda": "$"},
-    {"ticker": "SXR8.DE", "nome": "S&P 500", "moeda": "€"},           # Adicionado de volta
+    {"ticker": "SXR8.DE", "nome": "S&P 500", "moeda": "€"},
     {"ticker": "NQSE.DE", "nome": "Nasdaq", "moeda": "€"},
     {"ticker": "EGLN.L", "nome": "Ouro", "moeda": "$"},
-    {"ticker": "ISLN.L", "nome": "Prata", "moeda": "$"},             # Corrigido: ISLN.L
-    {"ticker": "IB1T.DE", "nome": "Bitcoin", "moeda": "€"},  
+    {"ticker": "ISLN.L", "nome": "Prata", "moeda": "$"},
+    {"ticker": "IB1T.DE", "nome": "Bitcoin", "moeda": "€"},
 ]
 
-linhas_mensagem = ["📊 **Resumo Diário do Portefólio**\n"]
+linhas_geral = []
+linhas_destaque = []
 
 for item in ativos:
     try:
@@ -30,22 +31,42 @@ for item in ativos:
             var_pct = ((preco_atual - preco_anterior) / preco_anterior) * 100
             sinal = "📈" if var_pct >= 0 else "📉"
 
-            linhas_mensagem.append(
-                f"{sinal} **{item['nome']}** (`{item['ticker']}`): {preco_atual:.2f} {item['moeda']} ({var_pct:+.2f}%)"
-            )
+            linha = f"{sinal} **{item['nome']}** (`{item['ticker']}`): {preco_atual:.2f} {item['moeda']} ({var_pct:+.2f}%)"
+            linhas_geral.append(linha)
+
+            # Se a variação for de +3% ou mais, ou -3% ou menos (grande oscilação)
+            if abs(var_pct) >= 3.0:
+                icone_alerta = "🔥 OPORTUNIDADE/SUBIDA" if var_pct > 0 else "💥 QUEDA BRUSCA"
+                linhas_destaque.append(
+                    f"• {icone_alerta}: **{item['nome']}** variou **{var_pct:+.2f}%** ({preco_atual:.2f} {item['moeda']})"
+                )
+
         else:
-            linhas_mensagem.append(f"⚠️ **{item['nome']}**: Sem dados recentes")
+            linhas_geral.append(f"⚠️ **{item['nome']}**: Sem dados recentes")
     except Exception:
-        linhas_mensagem.append(f"❌ **{item['nome']}**: Erro a carregar")
+        linhas_geral.append(f"❌ **{item['nome']}**: Erro a carregar")
 
-texto_final = "\n".join(linhas_mensagem)
+# Montar a mensagem final
+mensagem = ["📊 **Resumo Diário do Portefólio**\n"]
 
+# Se houver algum ativo com variação >= 3%, cria a secção especial no topo
+if linhas_destaque:
+    mensagem.append("🚨 **GRANDES MOVIMENTOS (≥ 3%)** 🚨")
+    mensagem.extend(linhas_destaque)
+    mensagem.append("\n" + "─"*30 + "\n")
+
+mensagem.extend(linhas_geral)
+texto_final = "\n".join(mensagem)
+
+# Enviar para o Discord
 webhook_url = os.getenv("DISCORD_WEBHOOK")
 
-payload = {"content": texto_final}
-response = requests.post(webhook_url, json=payload)
-
-print("Enviado com sucesso!" if response.status_code == 204 else f"Erro: {response.status_code}")
+if webhook_url:
+    payload = {"content": texto_final}
+    response = requests.post(webhook_url, json=payload)
+    print("Enviado com sucesso!" if response.status_code == 204 else f"Erro: {response.status_code}")
+else:
+    print("DISCORD_WEBHOOK não configurado.")
 
 
 
