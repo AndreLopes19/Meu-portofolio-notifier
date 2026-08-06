@@ -59,19 +59,19 @@ mensagem.extend(linhas_geral)
 texto_final = "\n".join(mensagem)
 
 # --- ENVIAR NOTIFICAÇÃO PUSH (NTFY.SH) ---
-topico_ntfy = os.getenv("NTFY_TOPIC") # Usa o teu nome único do Passo 1
+topico_ntfy = os.getenv("NTFY_TOPIC")
 
 if topico_ntfy:
-    # Se houver grande movimento (>=3%), a notificação faz mais barulho/prioridade alta!
     prioridade = "high" if houve_grande_movimento else "default"
     
+    # IMPORTANTE: O Title nos headers não pode levar emojis diretos
     requests.post(
         f"https://ntfy.sh/{topico_ntfy}",
         data=texto_final.encode("utf-8"),
         headers={
-            "Title": "📊 Mercado & Portefólio",
+            "Title": "Mercado e Portefolio", 
             "Priority": prioridade,
-            "Tags": "chart_with_upwards_trend,moneybag"
+            "Tags": "bar_chart,chart_with_upwards_trend,moneybag" # Emojis adicionados via tags
         }
     )
 
