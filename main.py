@@ -18,6 +18,7 @@ ativos = [
     {"ticker": "IB1T.DE", "nome": "Bitcoin", "moeda": "€"},
 ]
 
+
 linhas_geral = []
 linhas_destaque = []
 houve_grande_movimento = False
