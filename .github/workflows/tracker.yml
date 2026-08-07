@@ -1,9 +1,6 @@
 name: ETF Discord Notifier
 
 on:
-  schedule:
-    - cron: '12 13 * * 1-5'   # ~14:12 de Portugal (foge ao pico das 14:00)
-    - cron: '37 16 * * 1-5'   # ~17:37 de Portugal (foge ao pico das 17:30)
   workflow_dispatch:
 
 jobs:
@@ -27,4 +24,6 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+
+          
 
