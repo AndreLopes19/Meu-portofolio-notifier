@@ -65,18 +65,33 @@ topico_ntfy = os.getenv("NTFY_TOPIC")
 if topico_ntfy:
     prioridade = "high" if houve_grande_movimento else "default"
     
-    # IMPORTANTE: O Title nos headers não pode levar emojis diretos
-    requests.post(
-        f"https://ntfy.sh/{topico_ntfy}",
-        data=texto_final.encode("utf-8"),
-        headers={
-            "Title": "Mercado e Portefolio", 
-            "Priority": prioridade,
-            "Tags": "bar_chart,chart_with_upwards_trend,moneybag" # Emojis adicionados via tags
-        }
-    )
+    try:
+        # Timeout de 10s para não prender o GitHub Actions se o ntfy cair
+        res_ntfy = requests.post(
+            f"https://ntfy.sh/{topico_ntfy}",
+            data=texto_final.encode("utf-8"),
+            headers={
+                "Title": "Mercado e Portefolio", 
+                "Priority": prioridade,
+                "Tags": "bar_chart,chart_with_upwards_trend,moneybag"
+            },
+            timeout=20
+        )
+        res_ntfy.raise_for_status()
+        print("Notificação ntfy.sh enviada com sucesso!")
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Falha ao contactar ntfy.sh (ignorado): {e}")
 
 # --- OPÇÃO: Manter também o Discord (Opcional) ---
 webhook_url = os.getenv("DISCORD_WEBHOOK")
 if webhook_url:
-    requests.post(webhook_url, json={"content": texto_final})
+    try:
+        res_discord = requests.post(
+            webhook_url, 
+            json={"content": texto_final},
+            timeout=20
+        )
+        res_discord.raise_for_status()
+        print("Mensagem Discord enviada com sucesso!")
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Falha ao contactar Discord (ignorado): {e}")
